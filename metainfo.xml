@@ -1,0 +1,154 @@
+<?xml version='1.0' encoding='utf-8'?>
+<component type="desktop-application">
+    <id>io.github.kirukomaru11.Music</id>
+    <developer id="io.github.kirukomaru11">
+        <name>きるこ丸11号</name>
+    </developer>
+    <name>Music</name>
+    <summary>Audio/video player with library</summary>
+    <description>
+        <p>A local library for audio and video (MVs), it can manage user playlists and filter by artists, albums, or singles</p>
+        <p>This music player does not parse any metadata at all. It expects a library in the following format:</p>
+        <p>> Library Folder</p>
+        <p>>> M3U/M3U8 files for playlists</p>
+        <p>>> Artist Folder</p>
+        <p>>> Image for artist cover (will be used on subfiles without a cover)</p>
+        <p>>>> Albums/Singles Folder</p>
+        <p>>>>> Songs (example: "01 - name", "01. name" or just "name" if order is not important)</p>
+        <p>>>>> Subfolders will also be parsed as singles/albums</p>
+        <p>>>>> Image for album/single cover (will be used as artist cover if no artist specific cover)</p>
+        <p>Some features:</p>
+        <ul>
+          <li>Fast launching, loads covers after app is launched</li>
+          <li>Artists view, albums view, singles view</li>
+          <li>Animated covers and cover color themeing</li>
+          <li>Run in background</li>
+          <li>Adaptive UI and fullscreen mode</li>
+          <li>Automatically distinguish albums and singles if a folder has less than 7 songs</li>
+          <li>"All Songs", "Most Played" and "Recently Added" as default playlists</li>
+          <li>All widgets representing files/folders can be dragged with the file path as the content</li>
+          <li>Drop songs files into user created playlist to add them to playlist</li>
+          <li>Drag and drop inside a playlist to rearrange it</li>
+          <li>Rename and delete playlists</li>
+          <li>Open files (requires filesystem host permission)</li>
+          <li>MPRIS</li>
+        </ul>
+    </description>
+    <branding>
+        <color type="primary" scheme_preference="light">#f6f5f4</color>
+        <color type="primary" scheme_preference="dark">#c0bfbc</color>
+    </branding>
+    <supports>
+        <control>pointing</control>
+        <control>keyboard</control>
+        <control>touch</control>
+    </supports>
+    <screenshots>
+        <screenshot type="default">
+            <image>https://raw.githubusercontent.com/kirukomaru11/Music/master/1.png</image>
+            <caption>Playlist</caption>
+        </screenshot>
+        <screenshot>
+            <image>https://raw.githubusercontent.com/kirukomaru11/Music/master/2.png</image>
+            <caption>Compact</caption>
+        </screenshot>
+        <screenshot>
+            <image>https://raw.githubusercontent.com/kirukomaru11/Music/master/3.png</image>
+            <caption>Album</caption>
+        </screenshot>
+        <screenshot>
+            <image>https://raw.githubusercontent.com/kirukomaru11/Music/master/4.png</image>
+            <caption>Video</caption>
+        </screenshot>
+    </screenshots>
+    <launchable type="desktop-id">io.github.kirukomaru11.Music.desktop</launchable>
+    <icon type="stock">io.github.kirukomaru11.Music</icon>
+    <categories>
+        <category>Audio</category>
+        <category>AudioVideo</category>
+        <category>Video</category>
+    </categories>
+    <keywords>
+      <keyword>GTK</keyword>
+      <keyword>GNOME</keyword>
+      <keyword>Music</keyword>
+      <keyword>Player</keyword>
+      <keyword>Playlist</keyword>
+      <keyword>Library</keyword>
+    </keywords>
+    <provides>
+        <binary>music</binary>
+        <mediatype>application/ogg</mediatype>
+        <mediatype>application/x-ogg</mediatype>
+        <mediatype>application/x-mpegurl</mediatype>
+        <mediatype>application/x-extension-mp4</mediatype>
+        <mediatype>audio/mpeg</mediatype>
+        <mediatype>audio/wav</mediatype>
+        <mediatype>audio/aac</mediatype>
+        <mediatype>audio/flac</mediatype>
+        <mediatype>audio/mp3</mediatype>
+        <mediatype>audio/mp4</mediatype>
+        <mediatype>audio/ogg</mediatype>
+        <mediatype>audio/opus</mediatype>
+        <mediatype>audio/x-aac</mediatype>
+        <mediatype>audio/x-aiff</mediatype>
+        <mediatype>audio/x-ape</mediatype>
+        <mediatype>audio/x-flac</mediatype>
+        <mediatype>audio/x-m4a</mediatype>
+        <mediatype>audio/x-m4b</mediatype>
+        <mediatype>audio/x-mp1</mediatype>
+        <mediatype>audio/x-mp2</mediatype>
+        <mediatype>audio/x-mp3</mediatype>
+        <mediatype>audio/x-mpg</mediatype>
+        <mediatype>audio/x-mpeg</mediatype>
+        <mediatype>audio/x-mpegurl</mediatype>
+        <mediatype>audio/x-opus+ogg</mediatype>
+        <mediatype>audio/x-pn-aiff</mediatype>
+        <mediatype>audio/x-pn-au</mediatype>
+        <mediatype>audio/x-pn-wav</mediatype>
+        <mediatype>audio/x-speex</mediatype>
+        <mediatype>audio/x-vorbis</mediatype>
+        <mediatype>audio/x-vorbis+ogg</mediatype>
+        <mediatype>audio/x-wavpack</mediatype>
+        <mediatype>audio/x-mpegurl</mediatype>
+        <mediatype>video/mpeg</mediatype>
+        <mediatype>video/mp4</mediatype>
+        <mediatype>video/mp4v-es</mediatype>
+        <mediatype>video/m4v</mediatype>
+        <mediatype>video/mkv</mediatype>
+        <mediatype>video/flv</mediatype>
+        <mediatype>video/webm</mediatype>
+        <mediatype>video/avi</mediatype>
+        <mediatype>video/msvideo</mediatype>
+        <mediatype>video/ogg</mediatype>
+        <mediatype>video/3gp</mediatype>
+        <mediatype>video/3gpp</mediatype>
+        <mediatype>video/3gpp2</mediatype>
+        <mediatype>video/x-ogg</mediatype>
+        <mediatype>video/x-mpeg</mediatype>
+        <mediatype>video/x-mpeg2</mediatype>
+        <mediatype>video/x-mpeg3</mediatype>
+        <mediatype>video/x-m4v</mediatype>
+        <mediatype>video/x-matroska</mediatype>
+        <mediatype>video/x-msvideo</mediatype>
+        <mediatype>video/x-m4v</mediatype>
+        <mediatype>video/x-avi</mediatype>
+        <mediatype>video/x-flv</mediatype>
+        <mediatype>video/x-mjpeg</mediatype>
+    </provides>
+    <content_rating type="oars-1.1" />
+    <metadata_license>MIT</metadata_license>
+    <project_license>MIT</project_license>
+    <url type="bugtracker">https://github.com/kirukomaru11/Music/issues</url>
+    <url type="homepage">https://github.com/kirukomaru11/Music</url>
+    <url type="vcs-browser">https://github.com/kirukomaru11/Music</url>
+    <releases>
+        <release version="1.0" date="2025-10-31">
+            <description>
+                <ul>
+                    <li>First release</li>
+                </ul>
+            </description>
+        </release>
+    </releases>
+</component>
