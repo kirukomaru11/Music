@@ -10,7 +10,7 @@ Gtk.IconTheme.get_for_display(Gdk.Display.get_default()).add_search_path(os.path
 app = Adw.Application(application_id=com.props.id, flags=4)
 app.register()
 (app.run(sys.argv), exit()) if app.props.is_remote else None
-app.modifying, app.l, app.folder = False, [], None
+app.l, app.folder = [], None
 file_launcher= Gtk.FileLauncher.new()
 Action = lambda n, s, c: (a := Gio.SimpleAction.new(n, None), app.add_action(a), app.set_accels_for_action(f"app.{n}", s), a.connect("activate", c))
 shortcuts, about = Adw.ShortcutsDialog(), Adw.AboutDialog(application_icon=f"{com.props.id}-symbolic", application_name=com.props.name, developer_name=com.get_developer().get_name(), issue_url=tuple(com.props.urls.values())[0], website=tuple(com.props.urls.values())[-1], license_type=7, version=com.get_releases_plain().get_entries()[0].get_version(), release_notes=com.get_releases_plain().get_entries()[0].get_description())
@@ -58,8 +58,7 @@ def Drag(w):
 def track_drop(d, v, x, y):
     its = tuple(playlist.props.model.get_item(n) for n in range(playlist.props.model.props.n_items))
     if not v[0] in its: return False
-    for n, i in enumerate(its):
-        i.n = n
+    for n, i in enumerate(its): setattr(i, "n", n)
     d.props.widget.file.n, v[0].n = v[0].n, d.props.widget.file.n
     playlist.props.model.props.model.props.sorter.props.sort_order = 0
     playlist.props.model.props.model.props.sorter.set_expression(Gtk.ClosureExpression.new(int, lambda i: i.n))
@@ -107,7 +106,7 @@ def filter_playlist(*_):
         e = lambda i: app.music.get_relative_path(i) in sidebar.props.selected_item.content if hasattr(sidebar.props.selected_item, "content") else False
     playlist.props.model.props.model.props.model.props.filter[1].set_expression(Gtk.ClosureExpression.new(bool, e))
     playlist.props.model.props.model.props.model.props.filter[1].set_invert(sidebar.props.selected == 5)
-search = Gtk.SearchEntry(hexpand=True, placeholder_text="Search", search_delay=250)
+search = Gtk.SearchEntry(hexpand=True, placeholder_text="Search")
 def sort_playlist(*_):
     e = lambda i: 1
     if end_buttons[0].props.active:
@@ -118,45 +117,53 @@ def sort_playlist(*_):
         e = lambda i: app.l.index(sidebar.props.selected_item.file.parent.get_relative_path(i)) if hasattr(sidebar.props.selected_item, "parent") else 1
     playlist.props.model.props.model.props.sorter.set_expression(Gtk.ClosureExpression.new(int, e))
     playlist.props.model.props.model.props.sorter.props.sort_order = 1 if sidebar.props.selected == 4 else 0
+no_results = lambda: (status.set_icon_name("edit-find-symbolic"), status.set_title("No Results"), status.set_visible(True))
 def search_changed(*_):
-    if app.modifying: return
-    if playlist.get_mapped(): playlist.props.model.props.model.props.model.props.filter[0].set_search(search.props.text)
+    status.set_visible(False)
+    if playlist.get_mapped():
+        playlist.props.model.props.model.props.model.props.filter[0].set_search(search.props.text)
+        if playlist.props.model.props.n_items == 0: no_results()
     else:
         for c in catalog_pages:
             if c.props.child.get_mapped():
-                for i in c.props.child if isinstance(c.props.child, Gtk.FlowBox) else c.props.child.get_children():
+                children = tuple(i for i in c.props.child) if isinstance(c.props.child, Gtk.FlowBox) else c.props.child.get_children()
+                for i in children:
                     ch = i.props.child if isinstance(i, Gtk.FlowBoxChild) else i
                     i.props.visible = search.props.text.lower() in ch.props.tooltip_text.lower()
+                if not children:
+                    status.set_icon_name(sidebar.props.selected_item.props.icon_name)
+                    status.set_title(f"No {sidebar.props.selected_item.props.title}")
+                    status.set_visible(True)
+                if children and not any(i.props.visible for i in children): no_results()
 search.connect("search-changed", search_changed)
+reset_search = lambda: GLib.idle_add(search.set_text, "") if search.get_text() else search_changed()
 search_clamp = Adw.Clamp(maximum_size=350, child=search)
 view = Adw.NavigationView()
+overlay = Gtk.Overlay(child=view)
+status = Adw.StatusPage(visible=False)
+overlay.add_overlay(status)
 playlist = Gtk.ListView(vscroll_policy=1, css_classes=["navigation-sidebar"], factory=track_factory, valign=1, model=Gtk.SingleSelection(autoselect=False, can_unselect=False, model=Gtk.SortListModel(model=Gtk.FilterListModel(model=Gio.ListStore.new(Gio.File)))))
 playlist.props.model.props.model.props.sorter = Gtk.NumericSorter.new()
 playlist.props.model.props.model.props.model.props.filter = Gtk.EveryFilter()
 for i in (Gtk.StringFilter(expression=Gtk.ClosureExpression.new(str, lambda i: i.peek_path())), Gtk.BoolFilter()): playlist.props.model.props.model.props.model.props.filter.append(i)
 playlist.props.model.connect("notify::selected-item", lambda s, p: set_play(s.props.selected_item) if s.props.selected_item and s.props.selected_item != player.props.file else None)
-empty_page, queue_page, artist_page, artist_title = Adw.NavigationPage(title="Empty", child=Adw.StatusPage()), Adw.NavigationPage(title="Queue", child=Gtk.Overlay(child=Gtk.ScrolledWindow(hscrollbar_policy=2, child=playlist))), Adw.NavigationPage(title="Artist", child=Gtk.Box(css_name="artist", orientation=1)), Adw.WindowTitle()
+queue_page, artist_page, artist_title = Adw.NavigationPage(title="Queue", child=Gtk.ScrolledWindow(hscrollbar_policy=2, child=playlist)), Adw.NavigationPage(title="Artist", child=Gtk.Box(css_name="artist", orientation=1)), Adw.WindowTitle()
 artist_page.file = None
-reset_search = lambda *_: (setattr(app, "modifying", True), search.set_text(""),  setattr(app, "modifying", False))
-search.connect("map", reset_search)
-queue_page.props.child.add_overlay(Adw.StatusPage(icon_name="edit-find-symbolic", title="No Results"))
 def playlist_changed(p, pa):
-    queue_page.props.child.get_last_child().set_visible(playlist.props.model.props.n_items == 0)
     if player.props.file:
         its = tuple(playlist.props.model.get_item(n) for n in range(playlist.props.model.props.n_items))
-        if player.props.file in its:
-            playlist.props.model.set_selected(its.index(player.props.file))
-            update()
+        if player.props.file in its: GLib.idle_add(playlist.scroll_to, *(its.index(player.props.file), Gtk.ListScrollFlags.SELECT))
+    update()
 playlist.props.model.props.model.props.model.connect("notify::n-items", playlist_changed)
 
 a_page_artist = Adw.Avatar(size=200, show_initials=True, halign=3)
 a_page_artist.bind_property("text", a_page_artist, "tooltip-text", 0)
 artist_page.props.child.append(a_page_artist)
 a_page_albums, a_page_singles = ((b := Gtk.Box(orientation=1), b.append(Gtk.Label(label=i)), b.append(Adw.Clamp(child=Adw.Carousel(), orientation=1, maximum_size=300)), artist_page.props.child.append(b), b)[-1] for i in ("Albums", "Singles"))
-toolbar, header = Adw.ToolbarView(content=Gtk.ScrolledWindow(hscrollbar_policy=2, child=Gtk.Viewport(vscroll_policy=1, child=view))), Adw.HeaderBar()
+
+toolbar, header = Adw.ToolbarView(content=Gtk.ScrolledWindow(hscrollbar_policy=2, child=Gtk.Viewport(vscroll_policy=1, child=overlay))), Adw.HeaderBar()
 view.connect("notify::visible-page", lambda *_: toolbar.props.content.props.vadjustment.set_value(0))
 view.bind_property("visible-page", header, "title-widget", 0 | 2, lambda b, v: artist_title if v == artist_page else search_clamp)
-view.bind_property("visible-page", header, "show-title", 0 | 2, lambda b, v: v != empty_page)
 toolbar.add_top_bar(header)
 back_button = Button(callback=lambda b: view.pop(), tooltip_text="Back", icon_name="go-previous", bindings=((None, "visible", header, "show-back-button", 0 | 4),))
 header.pack_start(back_button)
@@ -196,29 +203,25 @@ split = Adw.NavigationSplitView(sidebar=Adw.NavigationPage(title="Music", child=
 Action("open-dir", ["<primary><shift>o"], lambda *_: (file_launcher.set_file(app.music), file_launcher.launch()))
 Action("open-current", ["<primary>o"], lambda *_: (file_launcher.set_file(player.props.file), file_launcher.open_containing_folder()))
 def change_view(*_):
-    reset_search()
+    if not sidebar.props.selected_item: return
     if len(catalog_pages) > sidebar.props.selected:
         c = catalog_pages[sidebar.props.selected].props.child
-        if not ((hasattr(c, "get_children") and c.get_children()) or (isinstance(c, Gtk.FlowBox) and c.get_first_child())):
-            page = empty_page
-            empty_page.props.child.props.icon_name = sidebar.props.selected_item.props.icon_name
-            empty_page.props.child.props.title = f"No {sidebar.props.selected_item.props.title}"
-        else:
-            page = catalog_pages[sidebar.props.selected]
-        view.replace((page, ))
+        view.replace((catalog_pages[sidebar.props.selected], ))
     else:
         if sidebar.props.selected > 5:
             app.l = sidebar.props.selected_item.content.strip().split("\n")
         sort_playlist()
         filter_playlist()
         view.replace((queue_page,))
-    split.set_show_content(True)
-sidebar.connect("activated", change_view)
+    reset_search()
+sidebar.connect("notify::selected", change_view)
+sidebar.connect("activated", lambda *_: split.set_show_content(True))
 def catalog_activate(m, c, b):
     app.folder = c.file
     sort_playlist()
     filter_playlist()
     view.push(queue_page)
+    reset_search()
 catalog_pages = tuple(Adw.NavigationPage(title=i.props.title, child=Gtk.FlowBox(selection_mode=0, valign=1, min_children_per_line=2, max_children_per_line=8, row_spacing=16) if i.props.title == "Artists" else MasonryBox(activate=catalog_activate)) for i in sections[0].props.items)
 def artist_activate(f, ch):
     c = ch.props.child
@@ -242,7 +245,8 @@ def artist_activate(f, ch):
         app.folder = c.file
         sort_playlist()
         filter_playlist()
-        return view.push(queue_page)
+        view.push(queue_page)
+        return reset_search()
     for i in playlist.props.model.props.model.props.model.props.model:
         if i.has_parent(c.file):
             p = Gtk.Picture(halign=3, css_classes=["no-cover"], tooltip_text="Random Singles", paintable=default_paintable)
@@ -255,6 +259,7 @@ def artist_activate(f, ch):
         i.props.visible = i.get_last_child().props.child.props.n_pages >= 1
     header.props.title_widget = artist_title
     view.push(artist_page)
+    reset_search()
 catalog_pages[0].props.child.connect("child-activated", artist_activate)
 _breakpoint = Adw.Breakpoint.new(Adw.BreakpointCondition.new_length(1, 700, 0))
 _breakpoint.add_setter(split, "collapsed", True)
