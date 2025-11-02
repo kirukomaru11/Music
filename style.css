@@ -32,12 +32,10 @@ masonrybox view { border-spacing: 10px; margin: 10px; }
 masonrybox view > column { border-spacing: 10px; }
 
 /* Coverless */
-small .no-cover,
-fullscreen .no-cover,
-masonrybox .no-cover { padding: 40px; }
-@media (prefers-color-scheme: dark) {
-  .no-cover { filter: brightness(10); }
-}
+artist .no-cover,
+masonrybox .no-cover { -gtk-icon-transform: scale(0.8); }
+fullscreen .no-cover { -gtk-icon-transform: scale(0.5); }
+small .no-cover { -gtk-icon-transform: scale(0.35); }
 
 /* Artist */
 artist avatar { margin: 10px; }
@@ -47,7 +45,6 @@ artist label {
 }
 artist picture { border-radius: 13px; }
 artist picture { margin: 10px; }
-artist .no-cover { padding: 40px; }
 
 /* Sidebar */
 sidebar preferencesgroup:nth-child(2) row:nth-child(2) box:first-child > image,
