@@ -138,7 +138,7 @@ def search_changed(*_):
 search.connect("search-changed", search_changed)
 reset_search = lambda: GLib.idle_add(search.set_text, "") if search.get_text() else search_changed()
 search_clamp = Adw.Clamp(maximum_size=350, child=search)
-view = Adw.NavigationView()
+view = Adw.NavigationView(animate_transitions=False)
 overlay = Gtk.Overlay(child=view)
 status = Adw.StatusPage(visible=False)
 overlay.add_overlay(status)
@@ -272,9 +272,9 @@ media_widgets = tuple(media_controls.get_template_child(Gtk.MediaControls, i) fo
 media_widgets[0].props.css_classes = ["circular"]
 for i in media_widgets: i.unparent()
 p_view = Adw.MultiLayoutView()
-cover, artist = Gtk.Picture(content_fit=3), Adw.Avatar(size=40, show_initials=True)
+cover, artist = Gtk.Picture(), Adw.Avatar(size=40, show_initials=True)
 artist.bind_property("text", artist, "tooltip-text", 0)
-p_view.bind_property("layout-name", cover, "content-fit", 0, lambda b, v: 3 if v == "normal" else 1 if v == "fullscreen" else 2)
+p_view.bind_property("layout-name", cover, "content-fit", 0, lambda b, v: 0 if v == "normal" else 1 if v == "fullscreen" else 2)
 normal, small, fullscreen, controls_box = Gtk.Box(css_name="normal"), Adw.Clamp(css_name="small",  maximum_size=160, orientation=1, unit=0, child=Gtk.Overlay(child=Adw.LayoutSlot.new("cover"))), Gtk.Overlay(css_name="fullscreen", child=Adw.LayoutSlot.new("cover")), Gtk.Box(css_name="controls", orientation=1)
 for i in (Adw.Clamp(maximum_size=90, orientation=1, unit=0, child=Adw.Clamp(maximum_size=300, unit=0, child=Adw.LayoutSlot.new("cover"))), Adw.LayoutSlot.new("controls_box")): normal.append(i)
 small.bind_property("tooltip-text", normal.get_first_child(), "tooltip-text", 0)
@@ -386,7 +386,7 @@ def add_playlist(f):
         app.lookup_action(f"playlist-{len(sections[2].props.items)}").connect("notify::state", change_playlist)
     sections[2].append(i)
 
-cover.props.paintable = default_paintable = Gtk.IconTheme.get_for_display(Gdk.Display.get_default()).lookup_icon("folder-music-symbolic", None, 500, 1, 0, 0)
+cover.props.paintable = default_paintable = Gtk.Svg.new_from_resource("/org/gtk/libgtk/icons/folder-music-symbolic.svg")
 
 def add_count():
     app.data[0].setdefault(app.music.get_relative_path(player.props.file), 0)
