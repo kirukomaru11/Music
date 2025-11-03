@@ -119,4 +119,3 @@ normal,
   background: color-mix(in srgb, var(--sidebar-bg-color) 15%, transparent);
   box-shadow: none;
 }
-row.destructive-action { background: color-mix(in srgb, var(--destructive-bg-color) 15%, transparent); }
