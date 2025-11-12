@@ -20,12 +20,13 @@
       ]
     },
     {
-      "name" : "app",
+      "name" : "Music",
       "buildsystem" : "simple",
       "sources" : [
         {
-          "path" : ".",
-          "type" : "dir"
+          "type" : "git",
+          "url" : "https://github.com/kirukomaru11/Music.git",
+          "branch": "main"
         }
       ],
       "build-commands" : [
