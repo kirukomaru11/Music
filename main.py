@@ -35,8 +35,8 @@ sidebar preferencesgroup:nth-child(3) row box:first-child > image,
 sidebar list row:nth-child(n+7) > box:first-child > image:first-child { transform: scale(1.3); }
 
 listview row { padding: 0px; margin-bottom: 6px; }
-listview row > box { border-radius: 8px; padding: 14px 6px 14px 16px; }
-listview row > box > overlay { padding-right: 16px;}
+listview row > box { border-radius: 8px; padding: 14px 6px 14px 0px; }
+listview row > box > overlay { min-width: 38px; padding: 0px 8px 0px 10px; }
 listview row > box > overlay > label { opacity: var(--dim-opacity); }
 listview row:selected > box > label { font-weight: bold; }
 listview row:selected > box > overlay > label { opacity: 0; }
@@ -216,6 +216,7 @@ e.connect("pressed", long_click)
 playlist.add_controller(e)
 def track_drop(d, v, x, y):
     its = tuple(playlist.get_model().get_item(n) for n in range(playlist.get_model().get_n_items()))
+    remove_button.set_reveal_child(False)
     if not v[0] in its or not playlist.highlight: return False
     for n, i in enumerate(its): setattr(i, "n", n)
     playlist.highlight.file.n, v[0].n = v[0].n, playlist.highlight.file.n
@@ -242,8 +243,10 @@ def d_prepare(e, x, y):
     child = get_playlist_item(x, y)
     if not child: return None
     e.file = child.file
+    if hasattr(sidebar.get_selected_item(), "file"): remove_button.set_reveal_child(True)
     return Gdk.ContentProvider.new_for_value(Gdk.FileList.new_from_list((e.file,)))
 drag_source.connect("prepare", d_prepare)
+drag_source.connect("drag-cancel", lambda *_: (remove_button.set_reveal_child(False), True)[-1])
 drag_source.connect("drag-begin", lambda e, d: Gtk.DragIcon.get_for_drag(d).set_child(Gtk.Label(margin_top=10, margin_start=10, label=e.file.get_basename(), css_classes=("title-4",))))
 playlist.add_controller(drag_source)
 
@@ -275,7 +278,7 @@ d = Gtk.DropTarget(actions=Gdk.DragAction.COPY, formats=Gdk.ContentFormats.parse
 d.connect("motion", lambda *_: (back_button.emit("clicked"), Gdk.DragAction.NONE)[-1])
 back_button.add_controller(d)
 header.pack_start(back_button)
-sidebar = Adw.Sidebar(drop_preload=True)
+sidebar = Adw.Sidebar(drop_preload=True, vexpand=True)
 d = Gtk.DropTarget(preload=True, actions=Gdk.DragAction.COPY, formats=Gdk.ContentFormats.parse("GdkFileList"))
 def drop(s, n, v, a):
     v = n if isinstance(n, Gdk.FileList) else v
@@ -295,8 +298,9 @@ def drop(s, n, v, a):
         for i in playlist.get_model().get_model().get_model().get_model():
             if (i.equal(it) or i.has_prefix(it)) and not f"{p.file.parent.get_relative_path(i)}\n" in p.content:
                 p.content += f"\n{p.file.parent.get_relative_path(i)}\n"
-                Toast(f"{i.get_basename()} added to {p.get_title()}", timeout=2, use_markup=False)
+                Toast(f"{i.get_basename()} added to {p.get_title()}", timeout=1, use_markup=False)
     p.file.replace_contents(p.content.encode("utf-8"), None, False, Gio.FileCreateFlags.NONE)
+    remove_button.set_reveal_child(False)
     return True
 sidebar.setup_drop_target(Gdk.DragAction.COPY, (Gdk.FileList,))
 sidebar.connect("drop", drop)
@@ -311,7 +315,24 @@ for t, i in (("Artists", "folder-user"), ("Albums", "media-optical-cd"), ("Singl
 for t, i in (("All Songs", "library-music"), ("Most Played", "fire2"), ("Recently Added", "folder-recent")): sections[1].append(Adw.SidebarItem(title=t, icon_name=f"{i}-symbolic", drag_motion_activate=False))
 main_page = Adw.NavigationPage(child=toolbar, title="Main Page")
 sidebar_header = Adw.HeaderBar()
-split = Adw.NavigationSplitView(sidebar=Adw.NavigationPage(title="Music", child=(t := Adw.ToolbarView(content=sidebar), t.add_controller(d), t.add_top_bar(sidebar_header), t)[-1]), content=main_page)
+box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+split = Adw.NavigationSplitView(sidebar=Adw.NavigationPage(title="Music", child=(t := Adw.ToolbarView(content=box), t.add_controller(d), t.add_top_bar(sidebar_header), t)[-1]), content=main_page)
+remove_button = Gtk.Revealer(child=Adw.ButtonRow(hexpand=True, title="Remove From Playlist"), transition_type=Gtk.RevealerTransitionType.SLIDE_UP, valign=Gtk.Align.END)
+remove_button.get_child().add_css_class("destructive-action")
+remove_d = Gtk.DropTarget(preload=True, actions=Gdk.DragAction.COPY, formats=Gdk.ContentFormats.parse("GdkFileList"))
+def remove_drop(s, v, x, y):
+    p = sidebar.get_selected_item()
+    for it in v:
+        for i in playlist.get_model().get_model().get_model().get_model():
+            if (i.equal(it) or i.has_prefix(it)) and f"{p.file.parent.get_relative_path(i)}\n" in p.content:
+                p.content = p.content.replace(f"{p.file.parent.get_relative_path(i)}\n", "").strip() + "\n"
+                Toast(f"{i.get_basename()} removed from {p.get_title()}", timeout=1, use_markup=False)
+    p.file.replace_contents(p.content.encode("utf-8"), None, False, Gio.FileCreateFlags.NONE)
+    remove_button.set_reveal_child(False)
+    return True
+remove_d.connect("drop", remove_drop)
+remove_button.add_controller(remove_d)
+for i in (sidebar, remove_button): box.append(i)
 def change_view(*_):
     if not sidebar.get_selected_item(): return
     if len(catalog_pages) > sidebar.get_selected():
@@ -461,14 +482,6 @@ p_view.bind_property("layout-name", box.get_first_child(), "vexpand", GObject.Bi
 p_view.bind_property("layout-name", box.get_last_child(), "vexpand", GObject.BindingFlags.DEFAULT | GObject.BindingFlags.SYNC_CREATE, lambda b, v: v == "fullscreen")
 p_view.bind_property("layout-name", box.get_first_child(), "reveal-child", GObject.BindingFlags.DEFAULT | GObject.BindingFlags.SYNC_CREATE, lambda b, v: v != "fullscreen")
 
-def change_playlist(a, p):
-    if app.modifying: return
-    p = sections[2].get_item(int(a.get_name().split("-")[-1]))
-    if p.file.parent.get_relative_path(app.file_launcher.get_file()) in p.content:
-        p.content = p.content.replace(f"{p.file.parent.get_relative_path(app.file_launcher.get_file())}\n", "")
-    else:
-        p.content += f"{p.file.parent.get_relative_path(app.file_launcher.get_file())}\n"
-    p.file.replace_contents(p.content.encode("utf-8"), None, False, Gio.FileCreateFlags.NONE)
 def rename(r):
     i = app.current
     nw, n = i.file.parent.get_child(f"{r.get_text()}.m3u8"), 0
@@ -505,7 +518,7 @@ def add_playlist(f):
     i.get_suffix().i = i
     i.file = f
     n = len(sections[2].get_items())
-    i.content = f.load_contents()[1].decode("utf-8")
+    i.content = f.load_contents()[1].decode("utf-8").strip() + "\n"
     sections[2].append(i)
     return i
 cover.set_paintable(default_paintable)
@@ -556,6 +569,7 @@ def ays_response(d, r):
         sections[2].remove(app.current)
         app.current.file.delete()
         p_edit.close()
+    sidebar.set_selected(0)
 Action("clear", lambda *_: (are_you_sure.set_heading("Clear Most Played?"), are_you_sure.present(app.window)))
 are_you_sure = Adw.AlertDialog(heading="Are You Sure", default_response="no")
 are_you_sure.connect("response", ays_response)
@@ -713,5 +727,4 @@ def parse_dir(root):
             catalog_pages[n + 1].get_child().add(media)
     change_view()
     return False
-
 app.run(argv)
