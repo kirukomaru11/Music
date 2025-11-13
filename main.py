@@ -35,15 +35,14 @@ sidebar preferencesgroup:nth-child(3) row box:first-child > image,
 sidebar list row:nth-child(n+7) > box:first-child > image:first-child { transform: scale(1.3); }
 
 listview row { padding: 0px; margin-bottom: 6px; }
-listview row > box { border-radius: 8px; padding: 14px 6px 14px 0px; }
-listview row > box > overlay { min-width: 38px; padding: 0px 8px 0px 10px; }
-listview row > box > overlay > label { opacity: var(--dim-opacity); }
-listview row:selected > box > label { font-weight: bold; }
-listview row:selected > box > overlay > label { opacity: 0; }
-listview row:selected > box > overlay > image { transform: scale(1.2); }
-listview row:not(:selected) > box > overlay > image { opacity: 0; }
+listview box { border-radius: 8px; padding: 14px 6px 14px 0px; }
+listview row label:first-child { min-width: 38px; padding: 0px 8px 0px 10px; }
+listview row label:first-child { opacity: var(--dim-opacity); }
+listview row:selected label:last-child { font-weight: bold; }
 .colored listview row:selected { background-color: color-mix(in srgb, var(--color-2) 45%, transparent); }
 listview:drop(active) .highlight {  border-color: var(--accent-bg-color); box-shadow: inset 0 0 0 1px var(--accent-bg-color); caret-color: var(--accent-bg-color); }
+
+listview row:selected label:first-child { font-size: 0; background-repeat: no-repeat; background-position: 50%; opacity: 1;}
 
 sheet,
 normal,
@@ -111,9 +110,10 @@ app = App(shortcuts={"General": (("Fullscreen", "app.fullscreen"), ("Open Curren
 
 a = Action("colors", callback=lambda *_: GLib.idle_add(set_colors, *(cover.p if hasattr(cover, "p") else None, True)), stateful=app.data["General"]["colors"])
 a.path = "General"
+app.persist.append(a)
 
 default_paintable = Gtk.Svg.new_from_resource("/org/gtk/libgtk/icons/folder-music-symbolic.svg")
-app.l, app.folder, app.modifying = [], None, False
+app.svg, app.l, app.folder, app.modifying = "", [], None, False
 
 def select_dir(d, r):
     app.data["General"]["music"] = d.select_folder_finish(r).get_path()
@@ -132,21 +132,12 @@ def Drag(w):
     drag_source.connect("drag-begin", lambda e, d: Gtk.DragIcon.get_for_drag(d).set_child(Gtk.Label(margin_top=10, margin_start=10, label=e.get_widget().file.get_basename(), css_classes=("title-4",))))
     w.add_controller(drag_source)
 def setup_track(f, l):
-    l.bindings = []
-    box = Gtk.Box()
-    n, play, label = Gtk.Label(), Gtk.Image(), Gtk.Label(ellipsize=Pango.EllipsizeMode.END)
-    overlay = Gtk.Overlay(child=n)
-    overlay.add_overlay(play)
-    for i in (overlay, label): box.append(i)
-    l.bindings = (l.bind_property("position", n, "label", GObject.BindingFlags.DEFAULT | GObject.BindingFlags.SYNC_CREATE, lambda b, v: str(v + 1)), media_widgets[0].bind_property("icon-name", play, "icon-name", GObject.BindingFlags.DEFAULT | GObject.BindingFlags.SYNC_CREATE), l.bind_property("item", label, "label", GObject.BindingFlags.DEFAULT | GObject.BindingFlags.SYNC_CREATE, lambda b, v: track_name(v)))
-    l.set_child(box)
-def teardown_track(f, l):
-    for i in l.bindings: i.unbind()
-    if l.get_child():
-        while l.get_child().get_first_child(): l.get_child().get_first_child().unparent()
-    l.set_child(None)
+    l.set_child(Gtk.Box())
+    for i in (Gtk.Label(), Gtk.Label(ellipsize=Pango.EllipsizeMode.END)): l.get_child().append(i)
+    l.b1 = l.bind_property("position", l.get_child().get_first_child(), "label", GObject.BindingFlags.DEFAULT, bind_track_n)
+    l.b2 = l.bind_property("item", l.get_child().get_last_child(), "label", GObject.BindingFlags.DEFAULT, bind_track_name)
 track_factory.connect("setup", setup_track)
-track_factory.connect("teardown", teardown_track)
+track_factory.connect("teardown", lambda f, l: (l.b1.unbind(), l.b2.unbind(), l.set_child(None)))
 def track_name(v):
     if not v: return ""
     e = v.get_basename().rsplit(".", 1)[0]
@@ -155,7 +146,24 @@ def track_name(v):
     if e.split(". ", 1)[0].isdigit():
         e = e.split(". ", 1)[-1]
     return e
+bind_track_n = lambda b, v: str(v + 1)
+bind_track_name = lambda b, v: track_name(v)
+def play_button(*_):
+    if not app.window.get_visible(): return
+    color = "ffffff" if app.get_style_manager().get_dark() else "222226"
+    if player.get_playing():
+        svg = f"""<g fill="#{color}"><path d="m 3 1 h 3 c 0.550781 0 1 0.449219 1 1 v 12 c 0 0.550781 -0.449219 1 -1 1 h -3 c -0.550781 0 -1 -0.449219 -1 -1 v -12 c 0 -0.550781 0.449219 -1 1 -1 z m 0 0"/><path d="m 10 1 h 3 c 0.550781 0 1 0.449219 1 1 v 12 c 0 0.550781 -0.449219 1 -1 1 h -3 c -0.550781 0 -1 -0.449219 -1 -1 v -12 c 0 -0.550781 0.449219 -1 1 -1 z m 0 0"/></g>"""
+    else:
+        svg = f"""<path d="m 2 2.5 v 11 c 0 1.5 1.269531 1.492188 1.269531 1.492188 h 0.128907 c 0.246093 0.003906 0.488281 -0.050782 0.699218 -0.171876 l 9.796875 -5.597656 c 0.433594 -0.242187 0.65625 -0.734375 0.65625 -1.226562 c 0 -0.492188 -0.222656 -0.984375 -0.65625 -1.222656 l -9.796875 -5.597657 c -0.210937 -0.121093 -0.453125 -0.175781 -0.699218 -0.175781 h -0.128907 s -1.269531 0 -1.269531 1.5 z m 0 0" fill="#{color}"/>"""
+    if app.svg == svg: return
+    app.svg = svg
+    css = """listview row:selected label:first-child { background-image: url('data:image/svg+xml,<svg height="20px" viewBox="0 0 16 16" width="20px">""" + app.svg + "</svg>'); }"
+    _css = Gtk.CssProvider.new()
+    _css.load_from_string(css)
+    GLib.idle_add(Gtk.StyleContext.add_provider_for_display, *(Gdk.Display.get_default(), _css, Gtk.STYLE_PROVIDER_PRIORITY_USER))
 player = Gtk.MediaFile.new()
+player.connect("notify::playing", play_button)
+app.get_style_manager().connect("notify::dark", play_button)
 def filter_playlist(*_):
     e = lambda i: (sidebar.get_selected() == 3) or (sidebar.get_selected() == 0 and app.folder == artist_page.file and i.has_parent(app.folder)) or (app.folder != artist_page.file and i.has_prefix(app.folder))
     if sidebar.get_selected() in (4, 5):
@@ -206,7 +214,7 @@ def get_playlist_item(x, y):
     if child == playlist: return
     while child.get_parent().get_parent() != playlist:
         child = child.get_parent()
-    child.file = playlist.get_model().get_item(int(child.get_first_child().get_child().get_label()) - 1)
+    child.file = playlist.get_model().get_item(int(child.get_first_child().get_label()) - 1)
     return child
 def long_click(e, x, y):
     child = get_playlist_item(x, y)
@@ -548,7 +556,7 @@ def set_play(file=None):
     if p == default_paintable: cover.add_css_class("no-cover")
     else: cover.remove_css_class("no-cover")
     cover.p = p
-    set_colors(p)
+    set_colors(p, True)
     if player.is_prepared():
         player.stream_unprepared()
         player.clear()
