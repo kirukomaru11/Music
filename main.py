@@ -721,7 +721,7 @@ def parse_dir(root):
         if file.has_parent(app.music): artists.append(file)
         else: albums.append(file) if len(d) + len(f) >= 7 else singles.append(file)
     for i in artists:
-        a = Media(i.c, parent_type=Adw.Avatar, finish_func=finish_func, p__halign=Gtk.Align.CENTER, p__show_initials=True, p__tooltip_text=i.get_basename(), p__text=i.get_basename(), p__size=200)
+        a = Media(i.c, parent_type=Adw.Avatar, finish_func=finish_func, media=True, p__halign=Gtk.Align.CENTER, p__show_initials=True, p__tooltip_text=i.get_basename(), p__text=i.get_basename(), p__size=200)
         Drag(a)
         a.file = i
         catalog_pages[0].get_child().append(a)
@@ -729,7 +729,7 @@ def parse_dir(root):
         _breakpoint.add_setter(a, "size", 168)
     for n, l in enumerate((albums, singles)):
         for i in l:
-            media = Media(i.c, finish_func=finish_func, parent_type=Gtk.Picture, p__css_classes=("no-cover",), p__tooltip_text=i.get_basename(), p__paintable=default_paintable)
+            media = Media(i.c, finish_func=finish_func, parent_type=Gtk.Picture, p__css_classes=("no-cover",), p__tooltip_text=i.get_basename(), media=True, p__paintable=default_paintable)
             media.file = i
             Drag(media)
             catalog_pages[n + 1].get_child().add(media)
