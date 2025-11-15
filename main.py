@@ -422,6 +422,8 @@ controller = Gtk.ShortcutController()
 p_view.add_controller(controller)
 p_view.controls = media_controls
 controller.add_shortcut(Gtk.Shortcut.new(Gtk.ShortcutTrigger.parse_string("space"), Gtk.CallbackAction.new(lambda *_: player.set_playing(not player.get_playing()))))
+controller.add_shortcut(Gtk.Shortcut.new(Gtk.ShortcutTrigger.parse_string("Escape"), Gtk.CallbackAction.new(lambda *_: p_view.set_layout_name("small" if 700 > app.window.get_width() else "normal"))))
+controller.add_shortcut(Gtk.Shortcut.new(Gtk.ShortcutTrigger.parse_string("f"), Gtk.CallbackAction.new(lambda *_: app.lookup_action("fullscreen").activate())))
 add_move_shortcuts(controller, False)
 cover, artist = Gtk.Picture(css_classes=("no-cover",)), Adw.Avatar(size=40, show_initials=True)
 artist.bind_property("text", artist, "tooltip-text", GObject.BindingFlags.DEFAULT)
@@ -582,7 +584,7 @@ Action("clear", lambda *_: (are_you_sure.set_heading("Clear Most Played?"), are_
 are_you_sure = Adw.AlertDialog(heading="Are You Sure", default_response="no")
 are_you_sure.connect("response", ays_response)
 for i in ("no", "yes"): are_you_sure.add_response(i, i.title())
-are_you_sure.set_response_appearance("yes", Adw.ResponseAppearance.SUGGESTED)
+are_you_sure.set_response_appearance("yes", Adw.ResponseAppearance.DESTRUCTIVE)
 
 def get_all(i):
     sv = {}
