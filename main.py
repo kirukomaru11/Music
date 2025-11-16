@@ -306,7 +306,7 @@ def drop(s, n, v, a):
         for i in playlist.get_model().get_model().get_model().get_model():
             if (i.equal(it) or i.has_prefix(it)) and not f"{p.file.parent.get_relative_path(i)}\n" in p.content:
                 p.content += f"\n{p.file.parent.get_relative_path(i)}\n"
-                Toast(f"{i.get_basename()} added to {p.get_title()}", timeout=1, use_markup=False)
+                Toast(f"{i.get_basename()} added to {p.get_title()}", timeout=1)
     p.file.replace_contents(p.content.encode("utf-8"), None, False, Gio.FileCreateFlags.NONE)
     remove_button.set_reveal_child(False)
     return True
