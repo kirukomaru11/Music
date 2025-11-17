@@ -73,7 +73,7 @@ navigation-split-view,
 def activate(a):
     if a.get_active_window(): return a.get_active_window().present()
     if a.data["General"]["music"] and os.path.exists(a.data["General"]["music"]):
-        GLib.idle_add(parse_dir, a.data["General"]["music"])
+        parse_dir(a.data["General"]["music"])
         a.window.set_application(a)
         a.window.present()
     else:
@@ -120,7 +120,7 @@ def select_dir(d, r):
     if app.get_active_window() != app.window:
         app.get_active_window().close()
         app.activate()
-    else: GLib.idle_add(parse_dir, app.data["General"]["music"])
+    else: parse_dir(app.data["General"]["music"])
 Action("change-dir", lambda *_: Gtk.FileDialog().select_folder(app.get_active_window(), None, select_dir))
 Action("open-library", lambda *_: launch(app.music), "<primary><shift>o")
 Action("open-file", lambda *_: launch(player.get_file()), "<primary>o")
@@ -130,7 +130,7 @@ def Drag(w):
     drag_source = Gtk.DragSource(actions=Gdk.DragAction.COPY)
     drag_source.connect("prepare", lambda e, x, y: Gdk.ContentProvider.new_for_value(Gdk.FileList.new_from_list((e.get_widget().file,))))
     drag_source.connect("drag-begin", lambda e, d: Gtk.DragIcon.get_for_drag(d).set_child(Gtk.Label(margin_top=10, margin_start=10, label=e.get_widget().file.get_basename(), css_classes=("title-4",))))
-    w.add_controller(drag_source)
+    GLib.idle_add(w.add_controller, drag_source)
 def setup_track(f, l):
     l.set_child(Gtk.Box())
     for i in (Gtk.Label(), Gtk.Label(ellipsize=Pango.EllipsizeMode.END)): l.get_child().append(i)
@@ -190,9 +190,9 @@ def search_changed(*_):
         playlist.get_model().get_model().get_model().get_filter()[0].set_search(search.get_text())
         if playlist.get_model().get_n_items() == 0: no_results()
     else:
-        for c in catalog_pages:
-            if c.get_child().get_mapped():
-                children = tuple(i for i in c.get_child()) if isinstance(c.get_child(), Gtk.FlowBox) else c.get_child().get_children()
+        for c in catalogs:
+            if c.get_mapped():
+                children = tuple(i for i in c) if isinstance(c, Gtk.FlowBox) else c.get_children()
                 for i in children:
                     ch = i.get_child() if isinstance(i, Gtk.FlowBoxChild) else i
                     i.set_visible(search.get_text().lower() in ch.get_tooltip_text().lower())
@@ -343,9 +343,7 @@ remove_button.add_controller(remove_d)
 for i in (sidebar, remove_button): box.append(i)
 def change_view(*_):
     if not sidebar.get_selected_item(): return
-    if len(catalog_pages) > sidebar.get_selected():
-        c = catalog_pages[sidebar.get_selected()].get_child()
-        view.replace((catalog_pages[sidebar.get_selected()], ))
+    if len(catalog_pages) > sidebar.get_selected(): view.replace((catalog_pages[sidebar.get_selected()], ))
     else:
         if sidebar.get_selected() > 5:
             app.l = sidebar.get_selected_item().content.strip().split("\n")
@@ -362,9 +360,10 @@ def catalog_activate(m, c, b):
     view.push(queue_page)
     reset_search()
 catalog_pages = tuple(Adw.NavigationPage(title=i.get_title(), child=Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, valign=Gtk.Align.START, min_children_per_line=2, max_children_per_line=8, row_spacing=16) if i.get_title() == "Artists" else MasonryBox(activate=catalog_activate)) for i in sections[0].get_items())
+catalogs = tuple(i.get_child() for i in catalog_pages)
 _breakpoint = Adw.Breakpoint.new(Adw.BreakpointCondition.new_length(Adw.BreakpointConditionLengthType.MAX_WIDTH, 700, Adw.LengthUnit.PX))
 app.window.add_breakpoint(_breakpoint)
-_breakpoint.add_setter(catalog_pages[0].get_child(), "row-spacing", 6)
+_breakpoint.add_setter(catalogs[0], "row-spacing", 6)
 def artist_activate(f, ch):
     c = ch.get_child()
     a_page_artist.set_text(c.file.get_basename())
@@ -373,8 +372,8 @@ def artist_activate(f, ch):
     a_page_artist.set_custom_image(c.get_custom_image())
     for i in (a_page_albums, a_page_singles):
         for it in tuple(it for it in i.get_last_child().get_child()): i.get_last_child().get_child().remove(it)
-    for b in (catalog_pages[1].get_child(), catalog_pages[2].get_child()):
-        ca = a_page_albums if b == catalog_pages[1].get_child() else a_page_singles
+    for b in catalogs[:1]:
+        ca = a_page_albums if b == catalogs[1] else a_page_singles
         ca = ca.get_last_child().get_child()
         for i in b.get_children():
             if not i.file.has_prefix(c.file): continue
@@ -403,7 +402,7 @@ def artist_activate(f, ch):
     header.set_title_widget(artist_title)
     view.push(artist_page)
     reset_search()
-catalog_pages[0].get_child().connect("child-activated", artist_activate)
+catalogs[0].connect("child-activated", artist_activate)
 _breakpoint.add_setter(split, "collapsed", True)
 _breakpoint.add_setter(sidebar, "mode", Adw.SidebarMode.PAGE)
 back_update = lambda *_: back_button.set_visible(view.get_navigation_stack().get_n_items() > 1 or split.get_show_content() and split.get_collapsed())
@@ -539,12 +538,12 @@ def add_count():
 def set_play(file=None):
     p = None
     if file:
-        for b in (catalog_pages[1].get_child(), catalog_pages[2].get_child()):
+        for b in catalogs[1:]:
             for i in b.get_children():
                 if file.has_parent(i.file):
                     p = i.get_paintable()
                     break
-        for a in catalog_pages[0].get_child():
+        for a in catalogs[0]:
             if file.has_prefix(a.get_child().file):
                 artist.set_properties(text=a.get_child().get_text(), custom_image=a.get_child().get_custom_image())
                 break
@@ -692,12 +691,12 @@ def finish_func(picture, paintable):
     paintable.colors = palette(paintable, distance=1.2, black_white=1.8)
     file = picture.file
     paintable.file = file.c
-    for p in (catalog_pages[1], catalog_pages[2]):
-        for i in p.get_child().get_children():
+    for p in catalogs[1:]:
+        for i in p.get_children():
             if not i.file.c and i.get_paintable() is default_paintable and i.file.has_prefix(file):
                 GLib.idle_add(i.set_paintable, paintable)
                 GLib.idle_add(i.remove_css_class, "no-cover")
-    for i in catalog_pages[0].get_child():
+    for i in catalogs[0]:
         if not i.get_child().file.c and (file.has_parent(i.get_child().file) or file.has_prefix(i.get_child().file)) and not i.get_child().get_custom_image():
             GLib.idle_add(i.get_child().set_custom_image, paintable)
 
@@ -705,13 +704,13 @@ def parse_dir(root):
     app.music = Gio.File.new_for_path(root)
     sections[2].remove_all()
     playlist.get_model().get_model().get_model().get_model().remove_all()
-    for i in (catalog_pages): i.get_child().remove_all()
+    for c in catalogs: c.remove_all()
     artists, albums, singles = [], [], []
     for r, d, f in os.walk(root):
         d.sort(key=alphabetical_sort)
         file = Gio.File.new_for_path(r)
-        file.f, file.c = sorted(f, key=alphabetical_sort), None
-        for i in file.f:
+        file.c = None
+        for i in sorted(f, key=alphabetical_sort):
             t = Gio.content_type_guess(i)[0]
             fi = file.get_child(i)
             fi.parent = file
@@ -721,12 +720,12 @@ def parse_dir(root):
                 file.c = fi
         if r == root: continue
         if file.has_parent(app.music): artists.append(file)
-        else: albums.append(file) if len(d) + len(f) >= 7 else singles.append(file)
+        else: (albums if len(d) + len(f) >= 7 else singles).append(file)
     for i in artists:
         a = Media(i.c, parent_type=Adw.Avatar, finish_func=finish_func, media=True, p__halign=Gtk.Align.CENTER, p__show_initials=True, p__tooltip_text=i.get_basename(), p__text=i.get_basename(), p__size=200)
         Drag(a)
         a.file = i
-        catalog_pages[0].get_child().append(a)
+        catalogs[0].append(a)
         a.get_parent().set_halign(Gtk.Align.CENTER)
         _breakpoint.add_setter(a, "size", 168)
     for n, l in enumerate((albums, singles)):
@@ -734,7 +733,6 @@ def parse_dir(root):
             media = Media(i.c, finish_func=finish_func, parent_type=Gtk.Picture, p__css_classes=("no-cover",), p__tooltip_text=i.get_basename(), media=True, p__paintable=default_paintable)
             media.file = i
             Drag(media)
-            catalog_pages[n + 1].get_child().add(media)
+            catalogs[n + 1].add(media)
     change_view()
-    return False
 app.run(argv)
