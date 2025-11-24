@@ -3,7 +3,7 @@ from sys import argv
 
 from AppUtils import *
 
-css = """
+style = """
 small,
 fullscreen { background: black; color: white; }
 small controls,
@@ -35,14 +35,13 @@ sidebar preferencesgroup:nth-child(3) row box:first-child > image,
 sidebar list row:nth-child(n+7) > box:first-child > image:first-child { transform: scale(1.3); }
 
 listview row { padding: 0px; margin-bottom: 6px; }
-listview box { border-radius: 8px; padding: 14px 6px 14px 0px; }
+listview box { border-radius: 8px; }
+listview label:last-child { padding: 14px 6px 14px 0px; }
 listview row label:first-child { min-width: 38px; padding: 0px 8px 0px 10px; }
 listview row label:first-child { opacity: var(--dim-opacity); }
 listview row:selected label:last-child { font-weight: bold; }
 .colored listview row:selected { background-color: color-mix(in srgb, var(--color-2) 45%, transparent); }
 listview:drop(active) .highlight {  border-color: var(--accent-bg-color); box-shadow: inset 0 0 0 1px var(--accent-bg-color); caret-color: var(--accent-bg-color); }
-
-listview row:selected label:first-child { font-size: 0; background-repeat: no-repeat; background-position: 50%; opacity: 1;}
 
 sheet,
 normal,
@@ -99,7 +98,7 @@ app = App(shortcuts={"General": (("Fullscreen", "app.fullscreen"), ("Open Curren
           args=argv,
           activate=activate,
           application_id="io.github.kirukomaru11.Music",
-          style=css,
+          style=style,
           flags=Gio.ApplicationFlags.HANDLES_OPEN,
           file_open=open_file,
           data={
@@ -148,6 +147,7 @@ def track_name(v):
     return e
 bind_track_n = lambda b, v: str(v + 1)
 bind_track_name = lambda b, v: track_name(v)
+play_replace = regex(fr"listview row:selected label:first-child {{.*}}")
 def play_button(*_):
     if not app.window.get_visible(): return
     color = "ffffff" if app.get_style_manager().get_dark() else "222226"
@@ -155,12 +155,8 @@ def play_button(*_):
         svg = f"""<g fill="#{color}"><path d="m 3 1 h 3 c 0.550781 0 1 0.449219 1 1 v 12 c 0 0.550781 -0.449219 1 -1 1 h -3 c -0.550781 0 -1 -0.449219 -1 -1 v -12 c 0 -0.550781 0.449219 -1 1 -1 z m 0 0"/><path d="m 10 1 h 3 c 0.550781 0 1 0.449219 1 1 v 12 c 0 0.550781 -0.449219 1 -1 1 h -3 c -0.550781 0 -1 -0.449219 -1 -1 v -12 c 0 -0.550781 0.449219 -1 1 -1 z m 0 0"/></g>"""
     else:
         svg = f"""<path d="m 2 2.5 v 11 c 0 1.5 1.269531 1.492188 1.269531 1.492188 h 0.128907 c 0.246093 0.003906 0.488281 -0.050782 0.699218 -0.171876 l 9.796875 -5.597656 c 0.433594 -0.242187 0.65625 -0.734375 0.65625 -1.226562 c 0 -0.492188 -0.222656 -0.984375 -0.65625 -1.222656 l -9.796875 -5.597657 c -0.210937 -0.121093 -0.453125 -0.175781 -0.699218 -0.175781 h -0.128907 s -1.269531 0 -1.269531 1.5 z m 0 0" fill="#{color}"/>"""
-    if app.svg == svg: return
-    app.svg = svg
-    css = """listview row:selected label:first-child { background-image: url('data:image/svg+xml,<svg height="20px" viewBox="0 0 16 16" width="20px">""" + app.svg + "</svg>'); }"
-    _css = Gtk.CssProvider.new()
-    _css.load_from_string(css)
-    GLib.idle_add(Gtk.StyleContext.add_provider_for_display, *(Gdk.Display.get_default(), _css, Gtk.STYLE_PROVIDER_PRIORITY_USER))
+    css.style = play_replace.sub("", css.style) + """listview row:selected label:first-child { background-image: url('data:image/svg+xml,<svg height="20px" viewBox="0 0 16 16" width="20px">""" + svg + "</svg>'); font-size: 0; background-repeat: no-repeat; background-position: 50%; opacity: 1; }"
+    GLib.idle_add(css.load_from_string, css.style)
 player = Gtk.MediaFile.new()
 player.connect("notify::playing", play_button)
 app.get_style_manager().connect("notify::dark", play_button)
@@ -688,7 +684,7 @@ for i in Gio.DBusNodeInfo.new_for_xml(mpris_xml).interfaces: app.get_dbus_connec
 
 def finish_func(picture, paintable):
     GLib.idle_add(picture.remove_css_class, "no-cover")
-    paintable.colors = palette(paintable, distance=1.2, black_white=1.8)
+    paintable.colors = palette(paintable)
     file = picture.file
     paintable.file = file.c
     for p in catalogs[1:]:
