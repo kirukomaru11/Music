@@ -78,63 +78,6 @@
     </keywords>
     <provides>
         <binary>music</binary>
-        <mediatype>application/ogg</mediatype>
-        <mediatype>application/x-ogg</mediatype>
-        <mediatype>application/x-mpegurl</mediatype>
-        <mediatype>application/x-extension-mp4</mediatype>
-        <mediatype>audio/mpeg</mediatype>
-        <mediatype>audio/wav</mediatype>
-        <mediatype>audio/aac</mediatype>
-        <mediatype>audio/flac</mediatype>
-        <mediatype>audio/mp3</mediatype>
-        <mediatype>audio/mp4</mediatype>
-        <mediatype>audio/ogg</mediatype>
-        <mediatype>audio/opus</mediatype>
-        <mediatype>audio/x-aac</mediatype>
-        <mediatype>audio/x-aiff</mediatype>
-        <mediatype>audio/x-ape</mediatype>
-        <mediatype>audio/x-flac</mediatype>
-        <mediatype>audio/x-m4a</mediatype>
-        <mediatype>audio/x-m4b</mediatype>
-        <mediatype>audio/x-mp1</mediatype>
-        <mediatype>audio/x-mp2</mediatype>
-        <mediatype>audio/x-mp3</mediatype>
-        <mediatype>audio/x-mpg</mediatype>
-        <mediatype>audio/x-mpeg</mediatype>
-        <mediatype>audio/x-mpegurl</mediatype>
-        <mediatype>audio/x-opus+ogg</mediatype>
-        <mediatype>audio/x-pn-aiff</mediatype>
-        <mediatype>audio/x-pn-au</mediatype>
-        <mediatype>audio/x-pn-wav</mediatype>
-        <mediatype>audio/x-speex</mediatype>
-        <mediatype>audio/x-vorbis</mediatype>
-        <mediatype>audio/x-vorbis+ogg</mediatype>
-        <mediatype>audio/x-wavpack</mediatype>
-        <mediatype>audio/x-mpegurl</mediatype>
-        <mediatype>video/mpeg</mediatype>
-        <mediatype>video/mp4</mediatype>
-        <mediatype>video/mp4v-es</mediatype>
-        <mediatype>video/m4v</mediatype>
-        <mediatype>video/mkv</mediatype>
-        <mediatype>video/flv</mediatype>
-        <mediatype>video/webm</mediatype>
-        <mediatype>video/avi</mediatype>
-        <mediatype>video/msvideo</mediatype>
-        <mediatype>video/ogg</mediatype>
-        <mediatype>video/3gp</mediatype>
-        <mediatype>video/3gpp</mediatype>
-        <mediatype>video/3gpp2</mediatype>
-        <mediatype>video/x-ogg</mediatype>
-        <mediatype>video/x-mpeg</mediatype>
-        <mediatype>video/x-mpeg2</mediatype>
-        <mediatype>video/x-mpeg3</mediatype>
-        <mediatype>video/x-m4v</mediatype>
-        <mediatype>video/x-matroska</mediatype>
-        <mediatype>video/x-msvideo</mediatype>
-        <mediatype>video/x-m4v</mediatype>
-        <mediatype>video/x-avi</mediatype>
-        <mediatype>video/x-flv</mediatype>
-        <mediatype>video/x-mjpeg</mediatype>
     </provides>
     <content_rating type="oars-1.1" />
     <metadata_license>MIT</metadata_license>
