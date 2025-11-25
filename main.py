@@ -188,7 +188,7 @@ def search_changed(*_):
     else:
         for c in catalogs:
             if c.get_mapped():
-                children = tuple(i for i in c) if isinstance(c, Gtk.FlowBox) else c.get_children()
+                children = tuple(i for i in c) if isinstance(c, Gtk.FlowBox) else masonrybox_get_children(c)
                 for i in children:
                     ch = i.get_child() if isinstance(i, Gtk.FlowBoxChild) else i
                     i.set_visible(search.get_text().lower() in ch.get_tooltip_text().lower())
@@ -371,7 +371,7 @@ def artist_activate(f, ch):
     for b in catalogs[1:]:
         ca = a_page_albums if b == catalogs[1] else a_page_singles
         ca = ca.get_last_child().get_child()
-        for i in b.get_children():
+        for i in masonrybox_get_children(b):
             if not i.file.has_prefix(c.file): continue
             p = Gtk.Picture(halign=Gtk.Align.CENTER, css_classes=i.get_css_classes(), tooltip_text=i.get_tooltip_text(), paintable=i.get_paintable())
             (e := Gtk.GestureClick(), e.connect("released", lambda ev, *_: catalog_activate(None, ev.get_widget(), 0), p.add_controller(e)))
@@ -535,7 +535,7 @@ def set_play(file=None):
     p = None
     if file:
         for b in catalogs[1:]:
-            for i in b.get_children():
+            for i in masonrybox_get_children(b):
                 if file.has_parent(i.file):
                     p = i.get_paintable()
                     break
@@ -688,19 +688,20 @@ def finish_func(picture, paintable):
     file = picture.file
     paintable.file = file.c
     for p in catalogs[1:]:
-        for i in p.get_children():
+        for i in masonrybox_get_children(p):
             if not i.file.c and i.get_paintable() is default_paintable and i.file.has_prefix(file):
                 GLib.idle_add(i.set_paintable, paintable)
                 GLib.idle_add(i.remove_css_class, "no-cover")
     for i in catalogs[0]:
         if not i.get_child().file.c and (file.has_parent(i.get_child().file) or file.has_prefix(i.get_child().file)) and not i.get_child().get_custom_image():
             GLib.idle_add(i.get_child().set_custom_image, paintable)
+app.finish_func = finish_func
 
 def parse_dir(root):
     app.music = Gio.File.new_for_path(root)
     sections[2].remove_all()
     playlist.get_model().get_model().get_model().get_model().remove_all()
-    for c in catalogs: c.remove_all()
+    for c in catalogs: c.remove_all() if hasattr(c, "remove_all") else masonrybox_remove_all(c)
     artists, albums, singles = [], [], []
     for r, d, f in os.walk(root):
         d.sort(key=alphabetical_sort)
@@ -718,7 +719,7 @@ def parse_dir(root):
         if file.has_parent(app.music): artists.append(file)
         else: (albums if len(d) + len(f) >= 7 else singles).append(file)
     for i in artists:
-        a = Media(i.c, parent_type=Adw.Avatar, finish_func=finish_func, media=True, p__halign=Gtk.Align.CENTER, p__show_initials=True, p__tooltip_text=i.get_basename(), p__text=i.get_basename(), p__size=200)
+        a = Media(i.c, avatar=i.get_basename())
         Drag(a)
         a.file = i
         catalogs[0].append(a)
@@ -726,9 +727,10 @@ def parse_dir(root):
         _breakpoint.add_setter(a, "size", 168)
     for n, l in enumerate((albums, singles)):
         for i in l:
-            media = Media(i.c, finish_func=finish_func, parent_type=Gtk.Picture, p__css_classes=("no-cover",), p__tooltip_text=i.get_basename(), media=True, p__paintable=default_paintable)
+            media = Media(i.c, loading_paintable=(default_paintable, "no-cover"))
+            media.set_tooltip_text(i.get_basename())
             media.file = i
             Drag(media)
-            catalogs[n + 1].add(media)
+            masonrybox_add(catalogs[n + 1], media)
     change_view()
 app.run(argv)
