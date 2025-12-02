@@ -550,7 +550,6 @@ def set_play(file=None):
     if p == default_paintable: cover.add_css_class("no-cover")
     else: cover.remove_css_class("no-cover")
     cover.p = p
-    set_colors(p, True)
     if player.is_prepared():
         player.stream_unprepared()
         player.clear()
@@ -561,6 +560,7 @@ def set_play(file=None):
         small.set_tooltip_text(track_name(file))
     else:
         small.set_tooltip_text("")
+    GLib.idle_add(set_colors, *(p, True))
 player.connect("notify::has-video", lambda p, pa: (cover.remove_css_class("no-cover"), cover.set_paintable(p)) if p.has_video() and app.window.get_visible() else None)
 for i in (True, False, True): media_widgets[0].set_sensitive(i)
 
