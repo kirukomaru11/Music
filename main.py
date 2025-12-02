@@ -147,7 +147,7 @@ def track_name(v):
     return e
 bind_track_n = lambda b, v: str(v + 1)
 bind_track_name = lambda b, v: track_name(v)
-play_replace = regex(fr"listview row:selected label:first-child {{.*}}")
+play_replace = regex("listview row:selected label:first-child {.*}")
 def play_button(*_):
     if not app.window.get_visible(): return
     color = "ffffff" if app.get_style_manager().get_dark() else "222226"
