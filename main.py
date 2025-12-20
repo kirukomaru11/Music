@@ -1,9 +1,15 @@
 #!/usr/bin/python3
-from sys import argv
-
 from AppUtils import *
 
-style = """
+style = r"""
+listview row:selected label:first-child { background-image: url('data:image/svg+xml,<svg height="20px" viewBox="0 0 16 16" width="20px"><path d="m 2 2.5 v 11 c 0 1.5 1.269531 1.492188 1.269531 1.492188 h 0.128907 c 0.246093 0.003906 0.488281 -0.050782 0.699218 -0.171876 l 9.796875 -5.597656 c 0.433594 -0.242187 0.65625 -0.734375 0.65625 -1.226562 c 0 -0.492188 -0.222656 -0.984375 -0.65625 -1.222656 l -9.796875 -5.597657 c -0.210937 -0.121093 -0.453125 -0.175781 -0.699218 -0.175781 h -0.128907 s -1.269531 0 -1.269531 1.5 z m 0 0" fill="#222226"/></svg>'); font-size: 0; background-repeat: no-repeat; background-position: 50%; opacity: 1; }
+.playing listview row:selected label:first-child { background-image: url('data:image/svg+xml,<svg height="20px" viewBox="0 0 16 16" width="20px"><g fill="#222226"><path d="m 3 1 h 3 c 0.550781 0 1 0.449219 1 1 v 12 c 0 0.550781 -0.449219 1 -1 1 h -3 c -0.550781 0 -1 -0.449219 -1 -1 v -12 c 0 -0.550781 0.449219 -1 1 -1 z m 0 0"/><path d="m 10 1 h 3 c 0.550781 0 1 0.449219 1 1 v 12 c 0 0.550781 -0.449219 1 -1 1 h -3 c -0.550781 0 -1 -0.449219 -1 -1 v -12 c 0 -0.550781 0.449219 -1 1 -1 z m 0 0"/></g></svg>'); }
+
+@media (prefers-color-scheme: dark) {
+ .no-cover { filter: contrast(0) brightness(10); }
+ listview row:selected label:first-child { filter: brightness(10); }
+}
+
 small,
 fullscreen { background: black; color: white; }
 small controls,
@@ -80,27 +86,10 @@ def activate(a):
         change_dir.add_top_bar(Adw.HeaderBar(show_title=False))
         Adw.ApplicationWindow(application=a, title=a.name, content=change_dir).present()
 
-def open_file(a, files, n, h):
-    app.activate()
-    sidebar.set_selected(3)
-    change_view()
-    for n, i in enumerate(files):
-        exists = tuple(it for it in playlist.get_model().get_model().get_model().get_model() if it.equal(i))
-        if exists:
-            files[n] = exists[0]
-        else:
-            i.parent = i.get_parent()
-            playlist.get_model().get_model().get_model().get_model().append(i)
-    its = tuple(playlist.get_model().get_item(n) for n in range(playlist.get_model().get_n_items()))
-    GLib.idle_add(playlist.scroll_to, *(its.index(files[0]), Gtk.ListScrollFlags.SELECT))
-
 app = App(shortcuts={"General": (("Fullscreen", "app.fullscreen"), ("Open Current File", "app.open-file"), ("Open Library Folder", "app.open-library"), ("Keyboard Shortcuts", "app.shortcuts")), "Player": (("Seek Backwards", "a Left h"), ("Seek Forwards", "d Right l"), ("Play/Pause", "space"), ("Volume Up", "w Up k"), ("Volume Down", "s Down j"))},
-          args=argv,
           activate=activate,
           application_id="io.github.kirukomaru11.Music",
           style=style,
-          flags=Gio.ApplicationFlags.HANDLES_OPEN,
-          file_open=open_file,
           data={
             "Window": { "default-height": 600, "default-width": 600, "maximized": False, "hide-on-close": False },
             "General": { "colors": True, "music": "" },
@@ -112,7 +101,7 @@ a.path = "General"
 app.persist.append(a)
 
 default_paintable = Gtk.Svg.new_from_resource("/org/gtk/libgtk/icons/folder-music-symbolic.svg")
-app.svg, app.l, app.folder, app.modifying = "", [], None, False
+app.l, app.folder, app.modifying = [], None, False
 
 def select_dir(d, r):
     app.data["General"]["music"] = d.select_folder_finish(r).get_path()
@@ -147,16 +136,8 @@ def track_name(v):
     return e
 bind_track_n = lambda b, v: str(v + 1)
 bind_track_name = lambda b, v: track_name(v)
-play_replace = regex("listview row:selected label:first-child {.*}")
-def play_button(*_):
-    if not app.window.get_visible(): return
-    color = "ffffff" if app.get_style_manager().get_dark() else "222226"
-    svg = f"""<g fill="#{color}"><path d="m 3 1 h 3 c 0.550781 0 1 0.449219 1 1 v 12 c 0 0.550781 -0.449219 1 -1 1 h -3 c -0.550781 0 -1 -0.449219 -1 -1 v -12 c 0 -0.550781 0.449219 -1 1 -1 z m 0 0"/><path d="m 10 1 h 3 c 0.550781 0 1 0.449219 1 1 v 12 c 0 0.550781 -0.449219 1 -1 1 h -3 c -0.550781 0 -1 -0.449219 -1 -1 v -12 c 0 -0.550781 0.449219 -1 1 -1 z m 0 0"/></g>""" if player.get_playing() else f"""<path d="m 2 2.5 v 11 c 0 1.5 1.269531 1.492188 1.269531 1.492188 h 0.128907 c 0.246093 0.003906 0.488281 -0.050782 0.699218 -0.171876 l 9.796875 -5.597656 c 0.433594 -0.242187 0.65625 -0.734375 0.65625 -1.226562 c 0 -0.492188 -0.222656 -0.984375 -0.65625 -1.222656 l -9.796875 -5.597657 c -0.210937 -0.121093 -0.453125 -0.175781 -0.699218 -0.175781 h -0.128907 s -1.269531 0 -1.269531 1.5 z m 0 0" fill="#{color}"/>"""
-    css.style = play_replace.sub("", css.style) + """listview row:selected label:first-child { background-image: url('data:image/svg+xml,<svg height="20px" viewBox="0 0 16 16" width="20px">""" + svg + "</svg>'); font-size: 0; background-repeat: no-repeat; background-position: 50%; opacity: 1; }"
-    GLib.idle_add(css.load_from_string, css.style)
 player = Gtk.MediaFile.new()
-player.connect("notify::playing", lambda *_: GLib.idle_add(play_button))
-app.get_style_manager().connect("notify::dark", lambda *_: GLib.idle_add(play_button))
+player.connect("notify::playing", lambda *_: GLib.idle_add(getattr(app.window, f"{'add' if player.get_playing() else 'remove'}_css_class"), "playing"))
 def filter_playlist(*_):
     e = lambda i: (sidebar.get_selected() == 3) or (sidebar.get_selected() == 0 and app.folder == artist_page.file and i.has_parent(app.folder)) or (app.folder != artist_page.file and i.has_prefix(app.folder))
     if sidebar.get_selected() in (4, 5):
@@ -370,7 +351,7 @@ def artist_activate(f, ch):
         ca = ca.get_last_child().get_child()
         for i in masonrybox_get_children(b):
             if not i.file.has_prefix(c.file): continue
-            p = Gtk.Picture(halign=Gtk.Align.CENTER, css_classes=i.get_css_classes(), tooltip_text=i.get_tooltip_text(), paintable=i.get_paintable())
+            p = Gtk.Picture(isolate_contents=False, halign=Gtk.Align.CENTER, css_classes=i.get_css_classes(), tooltip_text=i.get_tooltip_text(), paintable=i.get_paintable())
             (e := Gtk.GestureClick(), e.connect("released", lambda ev, *_: catalog_activate(None, ev.get_widget(), 0), p.add_controller(e)))
             Drag(p)
             p.file = i.file
@@ -384,7 +365,7 @@ def artist_activate(f, ch):
         return reset_search()
     for i in playlist.get_model().get_model().get_model().get_model():
         if i.has_parent(c.file):
-            p = Gtk.Picture(halign=Gtk.Align.CENTER, css_classes=("no-cover",), tooltip_text="Random Singles", paintable=default_paintable)
+            p = Gtk.Picture(isolate_contents=False, halign=Gtk.Align.CENTER, css_classes=("no-cover",), tooltip_text="Random Singles", paintable=default_paintable)
             (e := Gtk.GestureClick(), e.connect("released", lambda ev, *_: catalog_activate(None, ev.get_widget(), 0), p.add_controller(e)))
             Drag(p)
             p.file = c.file
@@ -417,7 +398,7 @@ controller.add_shortcut(Gtk.Shortcut.new(Gtk.ShortcutTrigger.parse_string("space
 controller.add_shortcut(Gtk.Shortcut.new(Gtk.ShortcutTrigger.parse_string("Escape"), Gtk.CallbackAction.new(lambda *_: p_view.set_layout_name("small" if 700 > app.window.get_width() else "normal"))))
 controller.add_shortcut(Gtk.Shortcut.new(Gtk.ShortcutTrigger.parse_string("f"), Gtk.CallbackAction.new(lambda *_: app.lookup_action("fullscreen").activate())))
 add_move_shortcuts(controller, False)
-cover, artist = Gtk.Picture(css_classes=("no-cover",)), Adw.Avatar(size=40, show_initials=True)
+cover, artist = Gtk.Picture(isolate_contents=False, css_classes=("no-cover",)), Adw.Avatar(size=40, show_initials=True)
 artist.bind_property("text", artist, "tooltip-text", GObject.BindingFlags.DEFAULT)
 p_view.bind_property("layout-name", cover, "content-fit", GObject.BindingFlags.DEFAULT, lambda b, v: Gtk.ContentFit.FILL if v == "normal" else Gtk.ContentFit.CONTAIN if v == "fullscreen" else Gtk.ContentFit.COVER)
 normal, small, fullscreen, controls_box = Gtk.Box(css_name="normal"), Adw.Clamp(css_name="small",  maximum_size=180, orientation=Gtk.Orientation.VERTICAL, unit=Adw.LengthUnit.PX, child=Gtk.Overlay(child=Adw.LayoutSlot.new("cover"))), Gtk.Overlay(css_name="fullscreen", child=Adw.LayoutSlot.new("cover")), Gtk.Box(css_name="controls", orientation=Gtk.Orientation.VERTICAL)
@@ -448,12 +429,9 @@ def Previous(*_):
         if end_buttons[1].get_tooltip_text() == "Track":
             add_count()
             return player.seek(0)
-        if playlist.get_model().get_selected() != 0:
-            playlist.get_model().set_selected(playlist.get_model().get_selected() - 1)
+        if playlist.get_model().get_selected() != 0: playlist.get_model().set_selected(playlist.get_model().get_selected() - 1)
         else:
-            if end_buttons[1].get_tooltip_text() == "Playlist":
-                playlist.get_model().set_selected(playlist.get_model().get_n_items() - 1)
-                return
+            if end_buttons[1].get_tooltip_text() == "Playlist": return playlist.get_model().set_selected(playlist.get_model().get_n_items() - 1)
             if playlist.get_model().get_selected() == 0:
                 add_count()
                 return player.seek(0)
@@ -469,7 +447,7 @@ for i in end_buttons: i.add_css_class("flat"); i.set_valign(Gtk.Align.CENTER); e
 controls_box.append(Gtk.CenterBox(vexpand=True, hexpand=True, start_widget=start, center_widget=center, end_widget=end))
 controls_box.append(media_widgets[1])
 
-for n, i in (("cover", cover), ("controls_box", controls_box)): p_view.set_child(n, i) 
+for n, i in (("cover", cover), ("controls_box", controls_box)): p_view.set_child(n, i)
 for a, b in (("normal", normal), ("small", small), ("fullscreen", fullscreen)): p_view.add_layout(Adw.Layout(name=a, content=b))
 _breakpoint.connect("apply", lambda b: p_view.set_layout_name("small") if p_view.get_layout_name() != "fullscreen" else None)
 _breakpoint.connect("unapply", lambda b: p_view.set_layout_name("normal") if p_view.get_layout_name() != "fullscreen" else None)
@@ -558,8 +536,7 @@ def set_play(file=None):
         add_count()
         player.set_playing(True)
         small.set_tooltip_text(track_name(file))
-    else:
-        small.set_tooltip_text("")
+    else: small.set_tooltip_text("")
     GLib.idle_add(set_colors, *(p, True))
 player.connect("notify::has-video", lambda p, pa: (cover.remove_css_class("no-cover"), cover.set_paintable(p)) if p.has_video() and app.window.get_visible() else None)
 for i in (True, False, True): media_widgets[0].set_sensitive(i)
@@ -730,4 +707,4 @@ def parse_dir(root):
             Drag(media)
             masonrybox_add(catalogs[n + 1], media)
     change_view()
-app.run(argv)
+app.run()
